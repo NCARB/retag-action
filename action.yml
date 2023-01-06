@@ -1,0 +1,26 @@
+name: 'Retag Action'
+description: 'Retags a docker ecr image. It is required that the base image be tagged with the first 8 of the commit sha prior to running this'
+inputs: 
+  repository:
+    description: >-
+      The ecr repository name where the the image to retag is located
+    required: true
+outputs:
+  build-id:
+    description: "retag image build id"
+    value: ${{ steps.build-info.outputs.build-id }}
+runs:
+  using: "composite"
+  steps:
+    - uses: ncarb/build-info-action@v1
+      id: build-info
+      # https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-retag.html
+    - name: retag images
+      env:
+        IMAGE_TAG: ${{ steps.build-info.outputs.version }}
+        IMAGE_RETAG: ${{ steps.build-info.outputs.build-id }}
+        ECR_REPOSITORY: ${{ inputs.repository }}
+      run: |
+        echo "tagging $ECR_REPOSITORY:$IMAGE_TAG as $ECR_REPOSITORY:$IMAGE_RETAG"
+        MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_REPOSITORY --image-ids imageTag=$IMAGE_TAG --query 'images[].imageManifest' --output text)
+        aws ecr put-image --repository-name $ECR_REPOSITORY --image-tag $IMAGE_RETAG --image-manifest "$MANIFEST"        
