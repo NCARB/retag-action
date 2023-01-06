@@ -16,6 +16,7 @@ runs:
       id: build-info
       # https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-retag.html
     - name: retag images
+      shell: bash
       env:
         IMAGE_TAG: ${{ steps.build-info.outputs.version }}
         IMAGE_RETAG: ${{ steps.build-info.outputs.build-id }}
